@@ -4,12 +4,10 @@
   "description": "Parsing language and engine for the web",
   "main": "dist/index.js",
   "dependencies": {
-    "babel-polyfill": "^6.20.0",
     "cheerio": "~0.18.0",
     "commander": "~2.6.0",
     "debug": "^2.3.3",
-    "request": "~2.51.0",
-    "underscore": "~1.7.0"
+    "request": "~2.51.0"
   },
   "keywords": [
     "parse",
@@ -19,20 +17,22 @@
     "scrape"
   ],
   "devDependencies": {
-    "babel-cli": "^6.18.0",
-    "babel-preset-latest": "^6.16.0",
-    "eslint": "^3.12.2",
-    "eslint-config-airbnb-base": "^11.0.0",
-    "eslint-plugin-import": "^2.2.0",
+    "@types/cheerio": "^0.22.5",
+    "@types/commander": "^2.11.0",
+    "@types/debug": "0.0.30",
+    "@types/mocha": "^2.2.44",
+    "@types/nock": "^8.2.1",
+    "@types/request": "^2.0.7",
+    "@types/should": "^11.2.0",
     "mocha": "~2.1.0",
     "nock": "~0.57.0",
-    "nodemon": "^1.11.0",
-    "should": "~4.6.1"
+    "should": "~4.6.1",
+    "tslint": "^5.8.0",
+    "typescript": "^2.6.1"
   },
   "scripts": {
-    "test": "node_modules/mocha/bin/mocha",
-    "build": "babel src -d dist",
-    "test:watch": "nodemon --watch test --watch src --exec \"npm run build && npm test\""
+    "test": "npm run-script build && node_modules/mocha/bin/mocha dist/spec.js",
+    "build": "node_modules/typescript/bin/tsc && node_modules/tslint/bin/tslint --project tslint.json"
   },
   "bin": {
     "parsz": "./dist/index.js"
