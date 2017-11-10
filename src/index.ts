@@ -186,7 +186,7 @@ function parseData(currentScope: Element, key: string, map: ParseletValue, optio
     });
 }
 
-function mapToData(html: string, map: IParselet, options: IOptions): Promise<{ [k: string]: any }> {
+export function mapToData(html: string, map: IParselet, options: IOptions): Promise<{ [k: string]: any }> {
   const scope = cheerio.load(html) as Element;
   const dataPoints = Object.keys(map).map((key: string) => {
     const dataParser = parseData(scope, key, map[key], options);
