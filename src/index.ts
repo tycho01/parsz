@@ -3,7 +3,6 @@
 import * as cheerio from "cheerio";
 import * as program from "commander";
 import * as debug from "debug";
-import * as R from "ramda";
 import * as request from "request";
 import { parse as urlParse, resolve as urlResolve } from "url";
 
@@ -29,6 +28,7 @@ export interface IKeyInfo {
 
 export interface IOptions {
   context?: string;
+  transformations?: { [k: string]: (v: any) => any };
 }
 
 export interface ISelectorInfo {
@@ -42,8 +42,6 @@ export type Element = CheerioStatic & Cheerio;
 const keyPattern = /(\w+)\(?([^)~]*)\)?~?\(?([^)]*)\)?/;
 const selectorPattern = /^([.-\s\w[\]=]+)?@?(\w+)?\|?(\w+)?/;
 const IDENTITY_SELECTOR = ".";
-
-const transformations = R;
 
 const getHtml = (url: string): Promise<string> => new Promise((resolve, reject) => {
   request(url, (err, res: request.RequestResponse, html: string) => {
@@ -112,13 +110,14 @@ function evalExpr(expr: string, vars: { [k: string]: any }) {
   return exprFunc.apply(null, args);
 }
 
-function parseLocalData(scope: Element, smartSelector: string): Promise<{}> {
+function parseLocalData(scope: Element, smartSelector: string, options: IOptions): Promise<{}> {
   const { selector, attr, fn } = parseSelectorInfo(smartSelector);
   log("Parsing local data with", { selector, attr });
   const item = getItemScope(scope, selector);
   const data = attr ? item.attr(attr) : item.text();
   log(`Parsed local data -> ${data}`);
   if (fn) {
+    const transformations = options.transformations || { trim: (s: string) => s.trim() };
     const transformed = evalExpr(fn, transformations)(data);
     log(`Transforming data to "${transformed}"`);
     return Promise.resolve(transformed);
@@ -129,7 +128,7 @@ function parseLocalData(scope: Element, smartSelector: string): Promise<{}> {
 function parseLocalDataListItem(item: Element, itemMap: ParseletItem, options: IOptions): Promise<{}> {
   // Handle simple case
   if (typeof itemMap === "string") {
-    return parseLocalData(item, itemMap);
+    return parseLocalData(item, itemMap, options);
   }
   // Handle another mapping object
   const itemPropertyResolvers = Object.keys(itemMap).map((itemKey: string) => {
