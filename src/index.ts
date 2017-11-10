@@ -203,7 +203,7 @@ export function mapToData(html: string, map: IParselet, options: IOptions): Prom
   });
 }
 
-export function parsz(parselet: IParselet, url: string, options: IOptions = {}): Promise<{ [k: string]: any }> {
+export function parse(parselet: IParselet, url: string, options: IOptions = {}): Promise<{ [k: string]: any }> {
   log(`Requesting ${url}`);
   return getHtml(url).then((html: string) => mapToData(html, parselet, options));
 }
@@ -224,7 +224,7 @@ if (require.main === module) {
 
   const parsedUrl = urlParse(program.url);
   // tslint:disable-next-line:no-var-requires
-  parsz(require(program.parselet), program.url, {
+  parse(require(program.parselet), program.url, {
     context: `${parsedUrl.protocol}//${parsedUrl.host}`,
   })
   // tslint:disable-next-line:no-console

@@ -2,7 +2,7 @@ import * as fs from "fs";
 import "mocha";
 import * as nock from "nock";
 import "should";
-import { parsz } from ".";
+import { parse } from ".";
 
 nock("http://www.test.com")
   .get("/")
@@ -61,7 +61,7 @@ const tacoPlacesInSanFrancsico = {
 
 describe("Parsley", () => {
   it("should parse plain selectors", (done) => {
-    parsz(
+    parse(
       {
         title: "h1",
       },
@@ -72,7 +72,7 @@ describe("Parsley", () => {
     }).catch(console.log);
   });
   it("should parse list of elements", (done) => {
-    parsz(
+    parse(
       {
         "links(ul a)": [{
           href: "@href",
@@ -88,7 +88,7 @@ describe("Parsley", () => {
     });
   });
   it("should parse attributes", (done) => {
-    parsz(
+    parse(
       {
         published: "[itemprop=date-published]@content",
       },
@@ -99,7 +99,7 @@ describe("Parsley", () => {
     });
   });
   it("should parse array as object prop value", (done) => {
-    parsz(
+    parse(
       {
          "images(img)": ["@src"],
       },
@@ -112,7 +112,7 @@ describe("Parsley", () => {
   });
 
   it("should parse yelp reviews", (done) => {
-    parsz(
+    parse(
       tacoPlacesInSanFrancsico,
       "http://www.yelp.com",
     ).then((data) => {
@@ -134,7 +134,7 @@ describe("Parsley", () => {
       },
       "name": "h1|trim",
     };
-    parsz(mapping, url, {
+    parse(mapping, url, {
       context: "http://www.yelp.com/",
     })
       .then((data) => {
@@ -155,7 +155,7 @@ describe("Parsley", () => {
         }],
       }],
     };
-    parsz(mapping, url, {
+    parse(mapping, url, {
       context: "http://www.yelp.com/",
     })
       .then((data) => {
