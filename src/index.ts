@@ -3,6 +3,7 @@
 import * as cheerio from "cheerio";
 import * as program from "commander";
 import * as debug from "debug";
+import * as R from "ramda";
 import * as request from "request";
 import { parse as urlParse, resolve as urlResolve } from "url";
 
@@ -42,14 +43,7 @@ const keyPattern = /(\w+)\(?([^)~]*)\)?~?\(?([^)]*)\)?/;
 const selectorPattern = /^([.-\s\w[\]=]+)?@?(\w+)?\|?(\w+)?/;
 const IDENTITY_SELECTOR = ".";
 
-const transformations: { [k: string]: (v: any) => any } = {
-  floor: Math.floor,
-  identity: (value) => value,
-  max: Math.max,
-  parseFloat,
-  parseInt,
-  trim: (s: string) => s.trim(),
-};
+const transformations = R;
 
 const getHtml = (url: string): Promise<string> => new Promise((resolve, reject) => {
   request(url, (err, res: request.RequestResponse, html: string) => {
@@ -110,6 +104,14 @@ function getScopeResolver(currentScope: Element, keyInfo: IKeyInfo, options: IOp
     : Promise.resolve(currentScope);
 }
 
+// http://2ality.com/2012/04/eval-variables.html
+function evalExpr(expr: string, vars: { [k: string]: any }) {
+  const keys = Object.keys(vars);
+  const exprFunc = Function.apply(null, keys.concat([`return ${expr}`]));
+  const args = keys.map((key) => vars[key]);
+  return exprFunc.apply(null, args);
+}
+
 function parseLocalData(scope: Element, smartSelector: string): Promise<{}> {
   const { selector, attr, fn } = parseSelectorInfo(smartSelector);
   log("Parsing local data with", { selector, attr });
@@ -117,7 +119,7 @@ function parseLocalData(scope: Element, smartSelector: string): Promise<{}> {
   const data = attr ? item.attr(attr) : item.text();
   log(`Parsed local data -> ${data}`);
   if (fn) {
-    const transformed = transformations[fn](data);
+    const transformed = evalExpr(fn, transformations)(data);
     log(`Transforming data to "${transformed}"`);
     return Promise.resolve(transformed);
   }

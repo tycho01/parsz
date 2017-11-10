@@ -7,6 +7,7 @@
     "cheerio": "~0.18.0",
     "commander": "~2.6.0",
     "debug": "^2.3.3",
+    "ramda": "^0.25.0",
     "request": "~2.51.0"
   },
   "keywords": [
@@ -22,6 +23,7 @@
     "@types/debug": "0.0.30",
     "@types/mocha": "^2.2.44",
     "@types/nock": "^8.2.1",
+    "@types/ramda": "github:types/npm-ramda#dist",
     "@types/request": "^2.0.7",
     "@types/should": "^11.2.0",
     "mocha": "~2.1.0",
