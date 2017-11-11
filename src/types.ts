@@ -13,7 +13,7 @@ export interface IKeyInfo {
 
 export interface IOpts {
   context?: string;
-  transforms?: { [k: string]: (v: any) => any };
+  transforms?: {};
 }
 
 export interface ISelectorInfo {
@@ -21,5 +21,3 @@ export interface ISelectorInfo {
   attr: string;
   fn: string;
 }
-
-export type Element = CheerioStatic & Cheerio;

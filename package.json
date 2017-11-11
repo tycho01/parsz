@@ -1,8 +1,9 @@
 {
   "name": "partsley",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Parsing language and engine for the web",
-  "main": "dist/index.js",
+  "main": "dist/index",
+  "types": "dist/index",
   "dependencies": {
     "cheerio": "^1.0.0-rc.2"
   },
