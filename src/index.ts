@@ -62,7 +62,7 @@ const parseList = (el: Element, sel: string, map: ParseletItem, opts: IOpts): an
     map, opts)).get() as Array<{}>;
 
 const parseData = (el: CheerioStatic, key: string, map: ParseletValue, opts: IOpts): {} =>
-    Array.isArray(map) ? parseList(el, parseKey(key).scope, map[0], opts) : parseItem(el, map, {});
+    Array.isArray(map) ? parseList(el, parseKey(key).scope, map[0], opts) : parseItem(el, map, opts);
 
 export function partsley(html: string, map: IParselet, opts: IOpts = {}): { [k: string]: any } {
   const scope = cheerio.load(html);
