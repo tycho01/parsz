@@ -37,7 +37,7 @@ const getItemScope = (el: Element, selector: string): Cheerio =>
 function parseLocalData(el: Element, smartSelector: string, opts: IOpts): {} {
   const { selector, attr, fn } = parseSelectorInfo(smartSelector);
   const item = getItemScope(el, selector);
-  const data = (attr ? item.attr(attr) : item.text()).trim();
+  const data = attr ? item.attr(attr) : item.text().trim();
   if (fn) {
     const { transforms } = opts;
     const transformed = evalExpr(fn, transforms || {})(data);
