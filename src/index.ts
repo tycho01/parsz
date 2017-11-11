@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import * as cheerio from "cheerio";
-import { IKeyInfo, IOpts, IParselet, ISelectorInfo, ParseletItem, ParseletValue } from "./types";
+import { Element, IKeyInfo, IOpts, IParselet, ISelectorInfo, ParseletItem, ParseletValue } from "./types";
 
 const keyPattern = /(\w+)\(?([^)~]*)\)?~?\(?([^)]*)\)?/;
 const selectorPattern = /^([.-\s\w[\]=]+)?@?(\w+)?\|?(\w+)?/;
@@ -29,10 +29,12 @@ function parseSelector(str: string): ISelectorInfo {
   return { attr, fn, selector };
 }
 
-const getItemScope = (el: CheerioSelector, sel: string): Cheerio =>
-    (!sel || sel === IDENTITY_SELECTOR) ? el({}) : el(sel);
+const getItemScope = (el: Element, sel: string): Cheerio =>
+    (!sel || sel === IDENTITY_SELECTOR) ? (el as Cheerio) :
+    (el as Cheerio).find ? (el as Cheerio).find(sel) :
+    (el as CheerioSelector)(sel);
 
-function parseLocalData(el: CheerioSelector, smartSelector: string, opts: IOpts): {} {
+function parseLocalData(el: Element, smartSelector: string, opts: IOpts): {} {
   const { selector, attr, fn } = parseSelector(smartSelector);
   const item = getItemScope(el, selector);
   const data = attr ? item.attr(attr) : item.text().trim();
@@ -43,7 +45,7 @@ function parseLocalData(el: CheerioSelector, smartSelector: string, opts: IOpts)
   return data;
 }
 
-const parseItem = (el: CheerioSelector, itemMap: ParseletItem, opts: IOpts): {} =>
+const parseItem = (el: Element, itemMap: ParseletItem, opts: IOpts): {} =>
     typeof itemMap === "string" ? parseLocalData(el, itemMap, opts) :
     Object.keys(itemMap).map((k) => {
       const { name, scope } = parseKey(k);
@@ -52,8 +54,10 @@ const parseItem = (el: CheerioSelector, itemMap: ParseletItem, opts: IOpts): {} 
       return [name, data] as [string, any];
     }).reduce((memo: {}, [name, data]: [string, any]) => Object.assign(memo, { [name]: data }), {});
 
-const parseList = (el: CheerioSelector, sel: string, map: ParseletItem, opts: IOpts): Array<{}> => getItemScope(el, sel)
-    .map((index: number, item: CheerioElement) => parseItem(cheerio.load(item), map, opts)).get() as Array<{}>;
+const parseList = (el: Element, sel: string, map: ParseletItem, opts: IOpts): any[] =>
+    getItemScope(el, sel).map((index: number, item: CheerioElement) => parseItem(
+      (el as Cheerio).find ? cheerio.load(item) : (el as CheerioSelector)(item),
+    map, opts)).get() as Array<{}>;
 
 const parseData = (el: CheerioStatic, key: string, map: ParseletValue, opts: IOpts): {} =>
     Array.isArray(map) ? parseList(el, parseKey(key).scope, map[0], opts) : parseItem(el, map, {});

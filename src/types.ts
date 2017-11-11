@@ -21,3 +21,5 @@ export interface ISelectorInfo {
   attr: string;
   fn: string;
 }
+
+export type Element = Cheerio | CheerioSelector;
