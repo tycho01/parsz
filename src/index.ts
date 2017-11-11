@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import * as cheerio from "cheerio";
-import * as request from "request";
 import { resolve as urlResolve } from "url";
 import { Element, IKeyInfo, IOpts, IParselet, ISelectorInfo, ParseletItem, ParseletValue } from "./types";
 
@@ -68,18 +67,3 @@ export function mapToData(html: string, map: IParselet, opts: IOpts = {}): { [k:
   return Object.keys(map).reduce((memo: {}, key: string, index: number) =>
       Object.assign(memo, { [parseKey(key).name]: parseData(scope, key, map[key], opts) }), {});
 }
-
-// fetchy parts
-
-const getHtml = (url: string): Promise<string> => new Promise((resolve, reject) => {
-  request(url, (err, res: request.RequestResponse, html: string) => {
-    if (!err && res.statusCode === 200) {
-      resolve(html);
-    } else {
-      reject(err || new Error(`URL returned a status of ${res.statusCode}`));
-    }
-  });
-});
-
-export const parse = (parselet: IParselet, url: string, opts: IOpts = {}): Promise<{ [k: string]: any }> =>
-    getHtml(url).then((html: string) => mapToData(html, parselet, opts));

@@ -4,9 +4,7 @@
   "description": "Parsing language and engine for the web",
   "main": "dist/index.js",
   "dependencies": {
-    "cheerio": "~0.18.0",
-    "commander": "~2.6.0",
-    "request": "~2.51.0"
+    "cheerio": "~0.18.0"
   },
   "keywords": [
     "parse",
@@ -17,10 +15,8 @@
   ],
   "devDependencies": {
     "@types/cheerio": "^0.22.5",
-    "@types/commander": "^2.11.0",
     "@types/mocha": "^2.2.44",
     "@types/nock": "^8.2.1",
-    "@types/request": "^2.0.7",
     "mocha": "~2.1.0",
     "nock": "~0.57.0",
     "tslint": "^5.8.0",
