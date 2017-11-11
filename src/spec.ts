@@ -1,7 +1,7 @@
+import { equal } from "assert";
 import * as fs from "fs";
 import "mocha";
 import * as nock from "nock";
-import "should";
 import { parse } from ".";
 
 nock("http://www.test.com")
@@ -67,7 +67,7 @@ describe("Parsley", () => {
       },
       "http://www.test.com",
     ).then((data) => {
-      data.title.should.equal("Hello World!");
+      equal(data.title, "Hello World!");
       done();
     }).catch(console.log);
   });
@@ -81,9 +81,9 @@ describe("Parsley", () => {
       },
       "http://www.test.com",
     ).then((data) => {
-      data.links.length.should.equal(3);
-      data.links[0].name.should.equal("A");
-      data.links[0].href.should.equal("/a");
+      equal(data.links.length, 3);
+      equal(data.links[0].name, "A");
+      equal(data.links[0].href, "/a");
       done();
     });
   });
@@ -94,7 +94,7 @@ describe("Parsley", () => {
       },
       "http://www.test.com",
     ).then((data) => {
-      data.published.should.equal("01/01/2015");
+      equal(data.published, "01/01/2015");
       done();
     });
   });
@@ -105,8 +105,8 @@ describe("Parsley", () => {
       },
       "http://www.test.com",
     ).then((data) => {
-      data.images[0].should.equal("a.png");
-      data.images[1].should.equal("b.jpg");
+      equal(data.images[0], "a.png");
+      equal(data.images[1], "b.jpg");
       done();
     });
   });
@@ -116,12 +116,12 @@ describe("Parsley", () => {
       tacoPlacesInSanFrancsico,
       "http://www.yelp.com",
     ).then((data) => {
-      data.places
+      equal(data.places
         .filter((place: { rating: number, name: string, phone: string }) => place.rating > 4)
-        .length.should.equal(4);
-      data.places[0].rating.should.equal(4.5);
-      data.places[0].name.should.equal("Tacorea");
-      data.places[0].phone.should.equal("(415) 885-1325");
+        .length, 4);
+      equal(data.places[0].rating, 4.5);
+      equal(data.places[0].name, "Tacorea");
+      equal(data.places[0].phone, "(415) 885-1325");
       done();
     });
   });
@@ -138,8 +138,8 @@ describe("Parsley", () => {
       context: "http://www.yelp.com/",
     })
       .then((data) => {
-        data.name.should.equal("Carol L.");
-        data.lastReviewedPlace.name.should.equal("Tacorea");
+        equal(data.name, "Carol L.");
+        equal(data.lastReviewedPlace.name, "Tacorea");
         done();
       });
   });
@@ -159,11 +159,11 @@ describe("Parsley", () => {
       context: "http://www.yelp.com/",
     })
       .then((data) => {
-        data.places.length.should.equal(10);
-        data.places[0].name.should.equal("Tacorea");
-        data.places[0].reviews.length.should.equal(21);
-        data.places[0].reviews[1].name.should.equal("Carol L.");
-        data.places[0].reviews[1].content.should.startWith("This place does Korean");
+        equal(data.places.length, 10);
+        equal(data.places[0].name, "Tacorea");
+        equal(data.places[0].reviews.length, 21);
+        equal(data.places[0].reviews[1].name, "Carol L.");
+        equal(data.places[0].reviews[1].content.startsWith("This place does Korean"), true);
         done();
       });
   });
