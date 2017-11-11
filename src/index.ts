@@ -30,9 +30,11 @@ function parseSelector(str: string): ISelectorInfo {
 }
 
 const getItemScope = (el: Element, sel: string): Cheerio =>
-    (!sel || sel === IDENTITY_SELECTOR) ? (el as Cheerio) :
+    (!sel || sel === IDENTITY_SELECTOR) ?
+    (el as Cheerio).find ? (el as Cheerio) :
+        (el as CheerioSelector)({}) :
     (el as Cheerio).find ? (el as Cheerio).find(sel) :
-    (el as CheerioSelector)(sel);
+        (el as CheerioSelector)(sel);
 
 function parseLocalData(el: Element, smartSelector: string, opts: IOpts): {} {
   const { selector, attr, fn } = parseSelector(smartSelector);
