@@ -30,7 +30,7 @@ function parseSelector(str: string): ISelectorInfo {
 }
 
 const getItemScope = (el: Element, sel: string): Cheerio =>
-    (!sel || sel === IDENTITY_SELECTOR) ?
+    (!sel || sel.trim() === IDENTITY_SELECTOR) ?
     (el as Cheerio).find ? (el as Cheerio) :
         (el as CheerioSelector)({}) :
     (el as Cheerio).find ? (el as Cheerio).find(sel) :
