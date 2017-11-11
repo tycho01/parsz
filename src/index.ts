@@ -40,7 +40,7 @@ function parseLocalData(el: Element, smartSelector: string, opts: IOpts): {} {
   const { selector, attr, fn } = parseSelector(smartSelector);
   const item = getItemScope(el, selector);
   const data = attr ? item.attr(attr) : item.text().trim();
-  if (fn) {
+  if (data && fn) {
     const { transforms } = opts;
     return evalExpr(fn, transforms || {})(data);
   }
