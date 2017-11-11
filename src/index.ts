@@ -49,12 +49,13 @@ function parseLocalData(el: Element, smartSelector: string, opts: IOpts): {} {
 
 const parseItem = (el: Element, itemMap: ParseletItem, opts: IOpts): {} =>
     typeof itemMap === "string" ? parseLocalData(el, itemMap, opts) :
-    Object.keys(itemMap).map((k) => {
+    Object.keys(itemMap).reduce((memo: {}, k) => {
       const { name, scope } = parseKey(k);
       const map = itemMap[k];
-      const data = Array.isArray(map) ? parseList(el, scope, map[0], opts) : parseItem(el, map, opts);
-      return [name, data] as [string, any];
-    }).reduce((memo: {}, [name, data]: [string, any]) => Object.assign(memo, { [name]: data }), {});
+      return Object.assign(memo, { [name]:
+        Array.isArray(map) ? parseList(el, scope, map[0], opts) : parseItem(el, map, opts),
+      });
+    }, {});
 
 const parseList = (el: Element, sel: string, map: ParseletItem, opts: IOpts): any[] =>
     getItemScope(el, sel).map((index: number, item: CheerioElement) => parseItem(
@@ -65,7 +66,7 @@ const parseData = (el: CheerioStatic, key: string, map: ParseletValue, opts: IOp
     Array.isArray(map) ? parseList(el, parseKey(key).scope, map[0], opts) : parseItem(el, map, opts);
 
 export function partsley(html: string, map: IParselet, opts: IOpts = {}): { [k: string]: any } {
-  const scope = cheerio.load(html);
-  return Object.keys(map).reduce((memo: {}, key: string, index: number) =>
-      Object.assign(memo, { [parseKey(key).name]: parseData(scope, key, map[key], opts) }), {});
+  const el = cheerio.load(html);
+  return Object.keys(map).reduce((memo: {}, key: string) =>
+      Object.assign(memo, { [parseKey(key).name]: parseData(el, key, map[key], opts) }), {});
 }
