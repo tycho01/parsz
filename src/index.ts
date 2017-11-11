@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import * as cheerio from "cheerio";
-import { resolve as urlResolve } from "url";
 import { Element, IKeyInfo, IOpts, IParselet, ISelectorInfo, ParseletItem, ParseletValue } from "./types";
 
 const keyPattern = /(\w+)\(?([^)~]*)\)?~?\(?([^)]*)\)?/;
@@ -53,7 +52,7 @@ const parseItem = (el: Element, itemMap: ParseletItem, opts: IOpts): {} =>
       const { name, scope } = parseKey(k);
       const map = itemMap[k];
       const data = Array.isArray(map) ? parseList(el, scope, map[0], opts) : parseItem(el, map, opts);
-      return [name, data];
+      return [name, data] as [string, any];
     }).reduce((memo: {}, [name, data]: [string, any]) => Object.assign(memo, { [name]: data }), {});
 
 const parseList = (el: Element, sel: string, map: ParseletItem, opts: IOpts): string[] => getItemScope(el, sel)
@@ -62,7 +61,7 @@ const parseList = (el: Element, sel: string, map: ParseletItem, opts: IOpts): st
 const parseData = (el: Element, key: string, map: ParseletValue, opts: IOpts): {} =>
     Array.isArray(map) ? parseList(el, parseKey(key).scope, map[0], opts) : parseItem(el, map, {});
 
-export function mapToData(html: string, map: IParselet, opts: IOpts = {}): { [k: string]: any } {
+export function parsz(html: string, map: IParselet, opts: IOpts = {}): { [k: string]: any } {
   const scope = cheerio.load(html) as Element;
   return Object.keys(map).reduce((memo: {}, key: string, index: number) =>
       Object.assign(memo, { [parseKey(key).name]: parseData(scope, key, map[key], opts) }), {});

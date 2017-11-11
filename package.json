@@ -16,9 +16,8 @@
   "devDependencies": {
     "@types/cheerio": "^0.22.5",
     "@types/mocha": "^2.2.44",
-    "@types/nock": "^8.2.1",
+    "@types/node": "^8.0.51",
     "mocha": "~2.1.0",
-    "nock": "~0.57.0",
     "tslint": "^5.8.0",
     "typescript": "^2.6.1"
   },
