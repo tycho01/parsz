@@ -1,6 +1,6 @@
 {
   "name": "partsley",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "Parsing language and engine for the web",
   "main": "dist/index.js",
   "dependencies": {
@@ -22,8 +22,8 @@
     "typescript": "^2.6.1"
   },
   "scripts": {
-    "test": "npm run-script build && node_modules/mocha/bin/mocha dist/spec.js",
-    "build": "node_modules/typescript/bin/tsc && node_modules/tslint/bin/tslint --project tslint.json"
+    "test": "npm run-script build && mocha dist/spec.js",
+    "build": "rm -rf dist && tsc && tslint --project tslint.json"
   },
   "repository": {
     "type": "git",
