@@ -3,43 +3,105 @@ import * as cheerio from "cheerio";
 import * as debug from "debug";
 import * as request from "request";
 import { resolve as urlResolve } from "url";
-
+import { Element, IKeyInfo, IOpts, IParselet, ISelectorInfo, ParseletItem, ParseletValue } from "./types";
 const log = debug("parsz");
-
-export interface IPair {
-  key: string;
-  data: any;
-}
-
-export type ParseletItem = string | IParselet;
-export type ParseletValue = ParseletItem | ParseletItem[];
-export interface IParselet {
-  [k: string]: ParseletValue;
-}
-
-export interface IKeyInfo {
-  name: string;
-  scope: string;
-  linkSelector: string;
-  isRemote: boolean;
-}
-
-export interface IOptions {
-  context?: string;
-  transformations?: { [k: string]: (v: any) => any };
-}
-
-export interface ISelectorInfo {
-  selector: string;
-  attr: string;
-  fn: string;
-}
-
-export type Element = CheerioStatic & Cheerio;
 
 const keyPattern = /(\w+)\(?([^)~]*)\)?~?\(?([^)]*)\)?/;
 const selectorPattern = /^([.-\s\w[\]=]+)?@?(\w+)?\|?(\w+)?/;
 const IDENTITY_SELECTOR = ".";
+
+// http://2ality.com/2012/04/eval-variables.html
+const evalExpr = (expr: string, vars: { [k: string]: any }): any => Function
+  .apply(null, [...Object.keys(vars), `return ${expr}`])
+  .apply(null, Object.values(vars));
+
+function getMatch(selector: string, pattern: RegExp): string[] {
+  const matched = selector.match(pattern);
+  if (!matched) {
+    throw new Error(`Could not match pattern: ${selector}`);
+  }
+  return matched;
+}
+
+function parseDataKeyInfo(key: string): IKeyInfo {
+  const [, name, scope, linkSelector] = getMatch(key, keyPattern);
+  return { isRemote: !!linkSelector, linkSelector, name, scope };
+}
+
+function parseSelectorInfo(str: string): ISelectorInfo {
+  const [, selector, attr, fn] = getMatch(str, selectorPattern);
+  return { attr, fn, selector };
+}
+
+const getItemScope = (el: Element, selector: string): Cheerio =>
+    (!selector || selector === IDENTITY_SELECTOR) ? el :
+    el.find ? el.find(selector) :
+    el(selector);
+
+function parseLocalData(el: Element, smartSelector: string, opts: IOpts): {} {
+  const { selector, attr, fn } = parseSelectorInfo(smartSelector);
+  log("Parsing local data with", { selector, attr });
+  const item = getItemScope(el, selector);
+  const data = attr ? item.attr(attr) : item.text();
+  log(`Parsed local data -> ${data}`);
+  if (fn) {
+    const transformations = opts.transformations || { trim: (s: string) => s.trim() };
+    const transformed = evalExpr(fn, transformations)(data);
+    log(`Transforming data to "${transformed}"`);
+    return transformed;
+  }
+  return data;
+}
+
+function parseLocalDataListItem(el: Element, itemMap: ParseletItem, opts: IOpts): {} {
+  // Handle simple case
+  if (typeof itemMap === "string") {
+    return parseLocalData(el, itemMap, opts);
+  }
+  // Handle another mapping object
+  return Object.keys(itemMap).map((itemKey: string) => {
+    const { name, scope } = parseDataKeyInfo(itemKey);
+    const map = itemMap[itemKey];
+    const data = Array.isArray(map)
+      ? parseLocalDataList(el, scope, map[0], opts)
+      : parseLocalDataListItem(el, map, opts);
+    return [name, data];
+  }).reduce((memo: { [k: string]: any }, [name, data]: [string, any]) => {
+    memo[name] = data;
+    return memo;
+  }, {});
+}
+
+function parseLocalDataList(el: Element, selector: string, map: ParseletItem, opts: IOpts): string[] {
+  log(`Parsing data list of selector (${selector || "n/a"})`);
+  const items = getItemScope(el, selector);
+  log(`Items: ${items.length}`);
+  return items.map((index: number, item: CheerioElement) =>
+    parseLocalDataListItem(el(item) as Element, map, opts)).get();
+}
+
+function parseData(el: Element, key: string, map: ParseletValue, opts: IOpts): {} {
+  const { name, scope } = parseDataKeyInfo(key);
+  if (Array.isArray(map)) {
+    log(`Parsing list "${name}"...`);
+    return parseLocalDataList(el, scope, map[0], opts);
+  }
+  log(`Parsing "${name}"...`);
+  return parseLocalDataListItem(el, map, {});
+}
+
+export function mapToData(html: string, map: IParselet, opts: IOpts = {}): { [k: string]: any } {
+  const scope = cheerio.load(html) as Element;
+  const results = Object.keys(map).map((key: string) => parseData(scope, key, map[key], opts));
+  // TODO: I think we need iterative here....
+  return Object.keys(map).reduce((memo: { [k: string]: any }, key: string, index: number) => {
+    const { name } = parseDataKeyInfo(key);
+    memo[name] = results[index];
+    return memo;
+  }, {});
+}
+
+// fetchy parts
 
 const getHtml = (url: string): Promise<string> => new Promise((resolve, reject) => {
   request(url, (err, res: request.RequestResponse, html: string) => {
@@ -51,156 +113,7 @@ const getHtml = (url: string): Promise<string> => new Promise((resolve, reject) 
   });
 });
 
-function parseDataKeyInfo(key: string): IKeyInfo {
-  const matched = key.match(keyPattern);
-  if (!matched) {
-    throw new Error(`Could not match key pattern`);
-  }
-  const [, name, scope, linkSelector] = matched;
-  const isRemote = !!linkSelector;
-  return {
-    isRemote,
-    linkSelector,
-    name,
-    scope,
-  };
-}
-
-function parseSelectorInfo(smartSelector: string): ISelectorInfo {
-  const matched = smartSelector.match(selectorPattern);
-  if (!matched) {
-    throw new Error(`Could not match selector pattern: ${smartSelector}`);
-  }
-  const [, selector, attr, fn] = matched;
-  return {
-    attr,
-    fn,
-    selector,
-  };
-}
-
-function getItemScope(scope: Element, selector: string): Cheerio {
-  if (!selector || selector === IDENTITY_SELECTOR) {
-    return scope;
-  }
-  return scope.find ? scope.find(selector) : scope(selector);
-}
-
-function getScopeResolver(currentScope: Element, keyInfo: IKeyInfo, options: IOptions): Promise<Element> {
-  return keyInfo.isRemote
-    ? new Promise((resolve) => {
-      log("Parsing remote data...", keyInfo);
-      const linkScope = getItemScope(currentScope, keyInfo.linkSelector);
-      const path = linkScope.attr("href");
-      const url = urlResolve(options.context || "", path);
-      log(`Requesting ${url}`);
-      return getHtml(url)
-        .then((html: string) => resolve(cheerio.load(html) as Element));
-    })
-    : Promise.resolve(currentScope);
-}
-
-// http://2ality.com/2012/04/eval-variables.html
-function evalExpr(expr: string, vars: { [k: string]: any }) {
-  const keys = Object.keys(vars);
-  const exprFunc = Function.apply(null, keys.concat([`return ${expr}`]));
-  const args = keys.map((key) => vars[key]);
-  return exprFunc.apply(null, args);
-}
-
-function parseLocalData(scope: Element, smartSelector: string, options: IOptions): Promise<{}> {
-  const { selector, attr, fn } = parseSelectorInfo(smartSelector);
-  log("Parsing local data with", { selector, attr });
-  const item = getItemScope(scope, selector);
-  const data = attr ? item.attr(attr) : item.text();
-  log(`Parsed local data -> ${data}`);
-  if (fn) {
-    const transformations = options.transformations || { trim: (s: string) => s.trim() };
-    const transformed = evalExpr(fn, transformations)(data);
-    log(`Transforming data to "${transformed}"`);
-    return Promise.resolve(transformed);
-  }
-  return Promise.resolve(data);
-}
-
-function parseLocalDataListItem(item: Element, itemMap: ParseletItem, options: IOptions): Promise<{}> {
-  // Handle simple case
-  if (typeof itemMap === "string") {
-    return parseLocalData(item, itemMap, options);
-  }
-  // Handle another mapping object
-  const itemPropertyResolvers = Object.keys(itemMap).map((itemKey: string) => {
-    const keyInfo = parseDataKeyInfo(itemKey);
-    const map = itemMap[itemKey];
-    return getScopeResolver(item, keyInfo, options)
-      .then((scope: Element) => {
-        const dataResolver = Array.isArray(map)
-        // eslint-disable-next-line no-use-before-define
-          ? parseLocalDataList(scope, keyInfo.scope, map[0], options)
-          : parseLocalDataListItem(scope, map, options);
-        return dataResolver;
-      })
-      .then((data: {}) => {
-        const namedData: IPair = {
-          data,
-          key: keyInfo.name,
-        };
-        return namedData;
-      });
-  });
-  return Promise.all(itemPropertyResolvers).then((pairs: IPair[]) => {
-    const resolvedItem = pairs.reduce((memo: { [k: string]: any }, pair: IPair) => {
-      memo[pair.key] = pair.data;
-      return memo;
-    }, {});
-    return resolvedItem;
-  });
-}
-
-function parseLocalDataList(scope: Element, itemSelector: string, itemMap: ParseletItem,
-                            options: IOptions): Promise<string[]> {
-  log(`Parsing data list of selector (${itemSelector || "n/a"})`);
-  const items = getItemScope(scope, itemSelector);
-  log(`Items: ${items.length}`);
-  return Promise.all(items.map((index: number, item: CheerioElement) => {
-    const itemParser = parseLocalDataListItem(scope(item) as Element, itemMap, options);
-    return itemParser;
-  }).get());
-}
-
-function parseData(currentScope: Element, key: string, map: ParseletValue, options: IOptions): Promise<{}> {
-  const keyInfo = parseDataKeyInfo(key);
-  return getScopeResolver(currentScope, keyInfo, options)
-    .then((scope: Element) => {
-      if (Array.isArray(map)) {
-        log(`Parsing list "${keyInfo.name}"...`);
-        const itemMap = map[0];
-        const itemSelector = keyInfo.scope;
-        return parseLocalDataList(scope, itemSelector, itemMap, options);
-      }
-      log(`Parsing "${keyInfo.name}"...`);
-      return parseLocalDataListItem(scope, map, {});
-    });
-}
-
-export function mapToData(html: string, map: IParselet, options: IOptions): Promise<{ [k: string]: any }> {
-  const scope = cheerio.load(html) as Element;
-  const dataPoints = Object.keys(map).map((key: string) => {
-    const dataParser = parseData(scope, key, map[key], options);
-    return dataParser;
-  });
-  // TODO: I think we need iterative here....
-  return Promise.all(dataPoints).then((results) => {
-    const data = Object.keys(map).reduce((memo: { [k: string]: any }, key: string, index: number) => {
-      const keyInfo = parseDataKeyInfo(key);
-      memo[keyInfo.name] = results[index];
-      return memo;
-    }, {});
-    return data;
-  });
-}
-
-export function parse(parselet: IParselet, url: string, options: IOptions = {}): Promise<{ [k: string]: any }> {
+export function parse(parselet: IParselet, url: string, opts: IOpts = {}): Promise<{ [k: string]: any }> {
   log(`Requesting ${url}`);
-  return getHtml(url).then((html: string) => mapToData(html, parselet, options));
+  return getHtml(url).then((html: string) => mapToData(html, parselet, opts));
 }
