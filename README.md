@@ -1,51 +1,41 @@
-# pársz
+# partsley
 ### - A tool for parsing the web
 
-[![NPM Version](https://img.shields.io/npm/v/parsz.svg)](https://www.npmjs.com/package/parsz)
+[![NPM Version](https://img.shields.io/npm/v/partsley.svg)](https://www.npmjs.com/package/partsley)
 
 ## Usage
 
-Install globally from npm/yarn
+Install from npm/yarn
 
 ``` bash
-$ npm install -g parsz
-```
-
-View options from help menu
-
-```bash
-$ parsz --help
+$ npm install partsley
 ```
 
 Use a "parselet" as a recipe/filter to parse a website.
 
-The structure of the parselet is JSON.
+Parselets are just plain JS objects, so can be serialized using e.g. YAML or JSON. Examples here are shown in YAML for brevity.
 
 Here is an example of a parselet for grabbing business data from a Yelp page:
 
-```json
-{
-  "name": "h1|trim",
-  "phone": ".biz-phone|trim",
-  "address": "address|trim",
-  "reviews(.review)": [{
-    "date": "meta[itemprop=datePublished] @content",
-    "name": ".user-name a",
-    "comment": ".review-content p"
-  }]
-}
+```yaml
+name: h1
+phone: .biz-phone
+address: address
+reviews(.review):
+- date: meta[itemprop=datePublished] @content
+  name: .user-name a
+  comment: .review-content p
 ```
 
 ## As a module
 
-You can also use parsz as a module:
+You can also use partsley as a module:
 
-```js
-import parsz from 'parsz';
+```ts
+import { partsley } from 'parsz';
 
-parsz([Parselet JSON], [URL]).then(data => {
-  // Do something with the data
-});
+const opts = {};
+const data = partsley(html, parselet, opts);
 ```
 
 ## Tips
@@ -56,59 +46,44 @@ This is a very general purpose and flexible tool. But here are some tips for get
 
 Use a reference selector in the key and an Array as the value.
 
-```json
-{
-  "users(.user)": [{
-    "name": ".name",
-    "age": ".age",
-  }]
-}
+```yaml
+users(.user):
+- name: .name
+  age: .age
 ```
 
 ### Use transformation functions on data
 
 Add a pipe (|) and the transformation name after the data selector.
 
-```json
-{
-  "user": {
-    "name": ".name|trim",
-    "age": ".age|parseInt",
-    "worth": ".age|parseFloat",
-    "someNumber": ".age|floor",
-  }
-}
+```yaml
+user:
+  name: .name
+  age: .age|parseInt
+  worth: .age|parseFloat
+  someNumber: .age|Math.floor
 ```
 
-*If anyone would like to see a certain, helpful transformation function added, please just open a issue*
+By default functions in scope include any standard library functions. However, you're encouraged to bring your own functions into scope. You may consider e.g. curried libs like [Ramda](http://ramdajs.com/) or [Lodash FP](https://github.com/lodash/lodash/wiki/FP-Guide), such as to expose transforms like `toLower` and `split(',')`:
+
+```ts
+import { partsley } from 'parsz';
+import * as R from 'ramda';
+
+const opts = {
+  transforms: R,
+};
+const data = partsley(html, parselet, opts);
+```
 
 ### Grabbing an attribute
 
 Use a (@) symbol to reference an attribute.
 
-```json
-{
-  "user": {
-    "name": ".name",
-    "nickname": ".name@data-nickname",
-  }
-}
-```
-
-### Grabbing remote data
-
-Use a (~) and a link selector to reference external content. The mapping (value) will be relative to that new external scope.
-
-```json
-{
-  "user": {
-    "name": ".name",
-    "company~(a.company)": {
-      "name": ".company-name",
-      "address": ".company-address",
-    },
-  }
-}
+```yaml
+user:
+  name: .name
+  nickname: .name@data-nickname
 ```
 
 Have fun!
@@ -117,3 +92,4 @@ Have fun!
 
 - [parsley](https://github.com/fizx/parsley) (C)
 - [parslepy](https://github.com/redapple/parslepy/) (Python)
+- [parsz](https://github.com/dijs/parsz) (JavaScript) - forked from this

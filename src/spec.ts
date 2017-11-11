@@ -1,7 +1,7 @@
 import { equal } from "assert";
 import * as fs from "fs";
 import "mocha";
-import { parsz } from ".";
+import { partsley } from ".";
 
 const files: { [k: string]: string } = {
   carol: "carol_profile",
@@ -16,22 +16,22 @@ const pages: { [k: string]: string } = Object.keys(files).reduce((acc: {}, k: st
 
 const tacoPlacesInSanFrancsico = {
   "places(.regular-search-result)": [{
-    address: "address|trim",
+    address: "address",
     name: ".biz-name",
-    phone: ".biz-phone|trim",
+    phone: ".biz-phone",
     rating: ".biz-rating img@alt|parseFloat",
   }],
 };
 
 describe("Parsley", () => {
   it("should parse plain selectors", () => {
-    const data = parsz(pages.test, {
+    const data = partsley(pages.test, {
       title: "h1",
     });
     equal(data.title, "Hello World!");
   });
   it("should parse list of elements", () => {
-    const data = parsz(pages.test, {
+    const data = partsley(pages.test, {
       "links(ul a)": [{
         href: "@href",
         name: ".",
@@ -42,13 +42,13 @@ describe("Parsley", () => {
     equal(data.links[0].href, "/a");
   });
   it("should parse attributes", () => {
-    const data = parsz(pages.test, {
+    const data = partsley(pages.test, {
       published: "[itemprop=date-published]@content",
     });
     equal(data.published, "01/01/2015");
   });
   it("should parse array as object prop value", () => {
-    const data = parsz(pages.test, {
+    const data = partsley(pages.test, {
       "images(img)": ["@src"],
     });
     equal(data.images[0], "a.png");
@@ -56,7 +56,7 @@ describe("Parsley", () => {
   });
 
   it("should parse yelp reviews", () => {
-    const data = parsz(pages.yelp, tacoPlacesInSanFrancsico);
+    const data = partsley(pages.yelp, tacoPlacesInSanFrancsico);
     equal(data.places
       .filter((place: { rating: number, name: string, phone: string }) => place.rating > 4)
       .length, 4);
@@ -69,11 +69,11 @@ describe("Parsley", () => {
     const url = "http://www.yelp.com/carol";
     const mapping = {
       "lastReviewedPlace~(.reviews li:first-child a)": {
-        name: "h1|trim",
+        name: "h1",
       },
-      "name": "h1|trim",
+      "name": "h1",
     };
-    const data = parsz(pages.carol, mapping, {
+    const data = partsley(pages.carol, mapping, {
       context: "http://www.yelp.com/",
     });
     equal(data.name, "Carol L.");
@@ -85,12 +85,12 @@ describe("Parsley", () => {
       "places(.regular-search-result)": [{
         "name": ".biz-name",
         "reviews(.review)~(.search-result-title a)": [{
-          content: ".review-content p|trim",
-          name: ".user-display-name|trim",
+          content: ".review-content p",
+          name: ".user-display-name",
         }],
       }],
     };
-    const data = parsz(pages.yelp, mapping, {
+    const data = partsley(pages.yelp, mapping, {
       context: "http://www.yelp.com/",
     });
     equal(data.places.length, 10);

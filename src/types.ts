@@ -13,7 +13,7 @@ export interface IKeyInfo {
 
 export interface IOpts {
   context?: string;
-  transformations?: { [k: string]: (v: any) => any };
+  transforms?: { [k: string]: (v: any) => any };
 }
 
 export interface ISelectorInfo {

@@ -37,10 +37,10 @@ const getItemScope = (el: Element, selector: string): Cheerio =>
 function parseLocalData(el: Element, smartSelector: string, opts: IOpts): {} {
   const { selector, attr, fn } = parseSelectorInfo(smartSelector);
   const item = getItemScope(el, selector);
-  const data = attr ? item.attr(attr) : item.text();
+  const data = (attr ? item.attr(attr) : item.text()).trim();
   if (fn) {
-    const transformations = opts.transformations || { trim: (s: string) => s.trim() };
-    const transformed = evalExpr(fn, transformations)(data);
+    const { transforms } = opts;
+    const transformed = evalExpr(fn, transforms || {})(data);
     return transformed;
   }
   return data;
@@ -61,7 +61,7 @@ const parseList = (el: Element, sel: string, map: ParseletItem, opts: IOpts): st
 const parseData = (el: Element, key: string, map: ParseletValue, opts: IOpts): {} =>
     Array.isArray(map) ? parseList(el, parseKey(key).scope, map[0], opts) : parseItem(el, map, {});
 
-export function parsz(html: string, map: IParselet, opts: IOpts = {}): { [k: string]: any } {
+export function partsley(html: string, map: IParselet, opts: IOpts = {}): { [k: string]: any } {
   const scope = cheerio.load(html) as Element;
   return Object.keys(map).reduce((memo: {}, key: string, index: number) =>
       Object.assign(memo, { [parseKey(key).name]: parseData(scope, key, map[key], opts) }), {});

@@ -1,10 +1,10 @@
 {
-  "name": "parsz",
+  "name": "partsley",
   "version": "2.0.4",
   "description": "Parsing language and engine for the web",
   "main": "dist/index.js",
   "dependencies": {
-    "cheerio": "~0.18.0"
+    "cheerio": "^1.0.0-rc.2"
   },
   "keywords": [
     "parse",
@@ -17,7 +17,7 @@
     "@types/cheerio": "^0.22.5",
     "@types/mocha": "^2.2.44",
     "@types/node": "^8.0.51",
-    "mocha": "~2.1.0",
+    "mocha": "^4.0.1",
     "tslint": "^5.8.0",
     "typescript": "^2.6.1"
   },
@@ -25,13 +25,10 @@
     "test": "npm run-script build && node_modules/mocha/bin/mocha dist/spec.js",
     "build": "node_modules/typescript/bin/tsc && node_modules/tslint/bin/tslint --project tslint.json"
   },
-  "bin": {
-    "parsz": "./dist/index.js"
-  },
   "repository": {
     "type": "git",
-    "url": "git://github.com/dijs/parsz"
+    "url": "git://github.com/tycho01/parsz"
   },
-  "author": "Richard van der Dys <richard.vanderdys@gmail.com> (http://richardvanderdys.com/)",
+  "author": "Richard van der Dys <richard.vanderdys@gmail.com> (http://richardvanderdys.com/), Tycho Grouwstra <tychogrouwstra@gmail.com> (https://github.com/tycho01)",
   "license": "MIT"
 }
