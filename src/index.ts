@@ -3,7 +3,7 @@ import * as cheerio from "cheerio";
 import { Element, IKeyInfo, IOpts, IParselet, ISelectorInfo, ParseletItem, ParseletValue } from "./types";
 
 const keyPattern = /(\w+)\(?([^)~]*)\)?~?\(?([^)]*)\)?/;
-const selectorPattern = /^([.-\s\w[\]=]+)?@?([\w-]+)?\s*\|?\s*(.*)?/;
+const selectorPattern = /^([.-\s\w[\]=>]+)?@?([\w-]+)?\s*\|?\s*(.*)?/;
 const IDENTITY_SELECTOR = ".";
 
 // http://2ality.com/2012/04/eval-variables.html
