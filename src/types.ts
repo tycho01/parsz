@@ -13,10 +13,12 @@ export interface IKeyInfo {
 }
 
 export interface IOpts {
+  $: Scope;
   context?: string;
   transforms?: {};
   isOptional?: boolean;
 }
+export type Opts = Partial<IOpts>;
 
 export interface ISelectorInfo {
   selector: string;

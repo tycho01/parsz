@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import * as R from "ramda";
-import { IKeyInfo, IOpts, IParselet, ISelectorInfo, ParseletItem, ParseletValue, Scope } from "./types";
+import { IKeyInfo, IOpts, IParselet, ISelectorInfo, Opts, ParseletItem, ParseletValue, Scope } from "./types";
 
 const keyPattern = /^([\w-]+)(\?)?\(?([^)~]*)\)?~?\(?([^)]*)\)?$/;
 const selectorPattern = /^([.-\s\w[\]=>]+)?@?([\w-]+)?\s*\|?\s*(.*)?$/;
@@ -47,9 +47,8 @@ const getItemScope = ($: Scope, sel: string): Cheerio =>
         ($ as CheerioSelector)(sel);
 
 // handle a parselet leaf (string)
-function parseValue($: Scope, sel: string, opts: IOpts): {} {
+function parseValue(sel: string, { $, transforms, isOptional }: IOpts): {} {
   const { selector, attr, fn } = parseSelector(sel);
-  const { transforms, isOptional } = opts;
   const item = getItemScope($, selector);
   const data = attr ? item.attr(attr) : item.text().trim();
   if (!data && !isOptional) {
@@ -60,28 +59,30 @@ function parseValue($: Scope, sel: string, opts: IOpts): {} {
 }
 
 // handle a parselet item: string or object
-const parseItem = ($: Scope, item: ParseletItem, opts: IOpts): {} =>
+const parseItem = (item: ParseletItem, opts: IOpts): {} =>
     typeof item === "string" ?
-        parseValue($, item, opts) :
-        parseObject($, item, opts);
+        parseValue(item, opts) :
+        parseObject(opts)(item);
 
 // handle a parselet object
-const parseObject = ($: Scope, plet: IParselet, opts: IOpts): {} =>
+const parseObject = (opts: IOpts) =>
     mapPairs(([k, map]: [string, ParseletValue]) => {
       const { name, selector: sel, isOptional } = parseKey(k);
       const opt = isOptional ? R.merge(opts, { isOptional }) : opts;
       const data = R.is(Array, map) ?
-          parseList($, sel, map[0], opt) :
-          parseItem($, map, opt);
+          parseList(sel, map[0], opt) :
+          parseItem(map, opt);
       return [name, data];
-    })(plet);
+    });
 
 // handle a parselet list, i.e. parse each selected Cheerio node
-const parseList = ($: Scope, sel: string, item: ParseletItem, opts: IOpts): any[] =>
-    getItemScope($, sel).map((i: number, el: CheerioElement) => parseItem(
-      ($ as Cheerio).find ? cheerio.load(el) : ($ as CheerioSelector)(el),
-    item, opts)).get() as Array<{}>;
+function parseList(sel: string, item: ParseletItem, opts: IOpts): any[] {
+  const { $ } = opts;
+  return getItemScope($, sel).map((i: number, el: CheerioElement) => parseItem(item,
+    R.assoc("$", ($ as Cheerio).find ? cheerio.load(el) : ($ as CheerioSelector)(el), opts),
+  )).get() as Array<{}>;
+}
 
 // handle a parselet object
-export const partsley = (html: string, plet: IParselet, opts: IOpts = {}): { [k: string]: any } =>
-    parseObject(cheerio.load(html), plet, opts);
+export const partsley = (html: string, plet: IParselet, opts: Opts = {}): { [k: string]: any } =>
+    parseObject(R.assoc("$", cheerio.load(html), opts))(plet);
