@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 import * as cheerio from "cheerio";
+import * as R from "ramda";
 import { Element, IKeyInfo, IOpts, IParselet, ISelectorInfo, ParseletItem, ParseletValue } from "./types";
 
 const keyPattern = /^([\w-]+)(\?)?\(?([^)~]*)\)?~?\(?([^)]*)\)?$/;
 const selectorPattern = /^([.-\s\w[\]=>]+)?@?([\w-]+)?\s*\|?\s*(.*)?$/;
 const IDENTITY_SELECTOR = ".";
+
+const mapPairs = (fn: ([k, v]: [string, any]) => [string, any]) =>
+    R.pipe(R.toPairs, R.map(fn), R.fromPairs);
 
 // http://2ality.com/2012/04/eval-variables.html
 const evalExpr = (expr: string, vars: { [k: string]: any }): any => Function
@@ -47,26 +51,28 @@ function parseLocalData(el: Element, smartSelector: string, opts: IOpts): {} {
   return data;
 }
 
-const parseItem = (el: Element, itemMap: ParseletItem, opts: IOpts): {} =>
-    typeof itemMap === "string" ? parseLocalData(el, itemMap, opts) :
-    Object.keys(itemMap).reduce((memo: {}, k) => {
+const parseItem = (el: Element, item: ParseletItem, opts: IOpts): {} =>
+    typeof item === "string" ? parseLocalData(el, item, opts) :
+    mapPairs(([k, v]: [string, ParseletValue]) => {
       const { name, scope } = parseKey(k);
-      const map = itemMap[k];
-      return Object.assign(memo, { [name]:
-        Array.isArray(map) ? parseList(el, scope, map[0], opts) : parseItem(el, map, opts),
-      });
-    }, {});
+      const data = R.is(Array, v) ?
+          parseList(el, scope, v[0], opts) :
+          parseItem(el, v, opts);
+      return [name, data];
+    })(item);
 
 const parseList = (el: Element, sel: string, map: ParseletItem, opts: IOpts): any[] =>
     getItemScope(el, sel).map((i: number, item: CheerioElement) => parseItem(
       (el as Cheerio).find ? cheerio.load(item) : (el as CheerioSelector)(item),
     map, opts)).get() as Array<{}>;
 
-const parseData = (el: CheerioStatic, key: string, map: ParseletValue, opts: IOpts): {} =>
-    Array.isArray(map) ? parseList(el, parseKey(key).scope, map[0], opts) : parseItem(el, map, opts);
+const parseData = (el: CheerioStatic, k: string, map: ParseletValue, opts: IOpts): {} =>
+    R.is(Array, map) ?
+        parseList(el, parseKey(k).scope, map[0], opts) :
+        parseItem(el, map, opts);
 
-export function partsley(html: string, map: IParselet, opts: IOpts = {}): { [k: string]: any } {
-  const el = cheerio.load(html);
-  return Object.keys(map).reduce((memo: {}, key: string) =>
-      Object.assign(memo, { [parseKey(key).name]: parseData(el, key, map[key], opts) }), {});
-}
+export const partsley = (html: string, plet: IParselet, opts: IOpts = {}): { [k: string]: any } =>
+    mapPairs(([k, v]: [string, ParseletValue]) => [
+      parseKey(k).name,
+      parseData(cheerio.load(html), k, v, opts),
+    ])(plet);
