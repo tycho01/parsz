@@ -38,7 +38,7 @@ function parseSelector(str: string): ISelectorInfo {
 }
 
 // get the Cheerio scope for a selector
-const getItemScope = ($: Scope, sel: string): Cheerio =>
+const getScope = ($: Scope, sel: string): Cheerio =>
     (!sel || sel.trim() === IDENTITY_SELECTOR) ?
       ($ as Cheerio).find ? ($ as Cheerio) :
         ($ as CheerioSelector)({}) :
@@ -48,7 +48,7 @@ const getItemScope = ($: Scope, sel: string): Cheerio =>
 // handle a parselet leaf (string)
 function parseValue({ $, transforms, isOptional, parselet }: IOpts<string>): {} {
   const { selector, attr, fn } = parseSelector(parselet);
-  const item = getItemScope($, selector);
+  const item = getScope($, selector);
   const data = attr ? item.attr(attr) : item.text().trim();
   if (!data && !isOptional) {
     // tslint:disable-next-line:no-console
@@ -69,7 +69,7 @@ const parseObject = (opts: IOpts<IParselet>): {} => R.pipe(
     const opt: IOpts<ParseletValue> = R.merge(opts, { parselet: map, isOptional: isOptional || opts.isOptional });
     if (isVoid && R.is(Object, map)) {
       return R.pipe(
-        R.evolve({ $: ($: Scope) => getItemScope($, sel) }) as R.Morphism<IOpts<ParseletItem>, IOpts<IParselet>>,
+        R.evolve({ $: ($: Scope) => getScope($, sel) }) as R.Morphism<IOpts<ParseletItem>, IOpts<IParselet>>,
         parseObject, R.toPairs,
       )(opt as IOpts<IParselet>);
     }
@@ -85,7 +85,7 @@ const parseObject = (opts: IOpts<IParselet>): {} => R.pipe(
 function parseList(sel: string, opts: IOpts<ParseletValue>): any[] {
   const opt = R.evolve({ parselet: R.prop(0) }, opts) as IOpts<ParseletItem>;
   const { $ } = opt;
-  return getItemScope($, sel).map((i: number, el: CheerioElement) => parseItem(
+  return getScope($, sel).map((i: number, el: CheerioElement) => parseItem(
     R.assoc("$",
       ($ as Cheerio).find ? cheerio.load(el) : ($ as CheerioSelector)(el),
     opt),
