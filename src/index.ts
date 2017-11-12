@@ -8,7 +8,7 @@ const selectorPattern = /^([.-\s\w[\]=>]+)?@?([\w-]+)?\s*\|?\s*(.*)?$/;
 const IDENTITY_SELECTOR = ".";
 
 const mapPairs = (fn: ([k, v]: [string, any]) => [string, any]) =>
-    R.pipe(R.toPairs, R.map(fn), R.fromPairs);
+    R.pipe(R.toPairs, R.map(fn) as (r: Array<[string, any]>) => Array<[string, any]>, R.fromPairs);
 
 // http://2ality.com/2012/04/eval-variables.html
 const evalExpr = (expr: string, o: {}): any => Function
