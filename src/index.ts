@@ -40,7 +40,7 @@ const getItemScope = (el: Element, sel: string): Cheerio =>
     (el as Cheerio).find ? (el as Cheerio).find(sel) :
         (el as CheerioSelector)(sel);
 
-function parseLocalData(el: Element, sel: string, opts: IOpts): {} {
+function parseValue(el: Element, sel: string, opts: IOpts): {} {
   const { selector, attr, fn } = parseSelector(sel);
   const item = getItemScope(el, selector);
   const data = attr ? item.attr(attr) : item.text().trim();
@@ -52,7 +52,7 @@ function parseLocalData(el: Element, sel: string, opts: IOpts): {} {
 }
 
 const parseItem = (el: Element, item: ParseletItem, opts: IOpts): {} =>
-    typeof item === "string" ? parseLocalData(el, item, opts) :
+    typeof item === "string" ? parseValue(el, item, opts) :
     mapPairs(([k, v]: [string, ParseletValue]) => {
       const { name, scope } = parseKey(k);
       const data = R.is(Array, v) ?
