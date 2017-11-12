@@ -55,12 +55,13 @@ function parseValue(el: Element, sel: string, opts: IOpts): {} {
 
 const parseItem = (el: Element, item: ParseletItem, opts: IOpts): {} =>
     typeof item === "string" ? parseValue(el, item, opts) :
+    parseObject(el, item, opts);
+
+const parseObject = (el: Element, item: IParselet, opts: IOpts): {} =>
     mapPairs(([k, v]: [string, ParseletValue]) => {
       const { name, scope, isOptional } = parseKey(k);
       const opt = checkOptional(isOptional, opts);
-      const data = R.is(Array, v) ?
-          parseList(el, scope, v[0], opt) :
-          parseItem(el, v, opt);
+      const data = parseData(el, k, v, opt);
       return [name, data];
     })(item);
 
@@ -69,7 +70,7 @@ const parseList = (el: Element, sel: string, map: ParseletItem, opts: IOpts): an
       (el as Cheerio).find ? cheerio.load(item) : (el as CheerioSelector)(item),
     map, opts)).get() as Array<{}>;
 
-function parseData(el: CheerioStatic, k: string, map: ParseletValue, opts: IOpts): {} {
+function parseData(el: Element, k: string, map: ParseletValue, opts: IOpts): {} {
   const { scope, isOptional } = parseKey(k);
   const opt = checkOptional(isOptional, opts);
   return R.is(Array, map) ?
@@ -78,10 +79,4 @@ function parseData(el: CheerioStatic, k: string, map: ParseletValue, opts: IOpts
 }
 
 export const partsley = (html: string, plet: IParselet, opts: IOpts = {}): { [k: string]: any } =>
-    mapPairs(([k, v]: [string, ParseletValue]) => {
-      const { name, isOptional } = parseKey(k);
-      const opt = checkOptional(isOptional, opts);
-      const scope = cheerio.load(html);
-      const data = parseData(scope, k, v, opt);
-      return [name, data];
-    })(plet);
+    parseObject(cheerio.load(html), plet, opts);
