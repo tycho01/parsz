@@ -1,6 +1,5 @@
 import { equal } from "assert";
 import * as fs from "fs";
-import "mocha";
 import { partsley } from ".";
 
 const files: { [k: string]: string } = {

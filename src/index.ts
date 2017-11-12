@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import * as cheerio from "cheerio";
 import * as R from "ramda";
 import { Element, IKeyInfo, IOpts, IParselet, ISelectorInfo, ParseletItem, ParseletValue } from "./types";
