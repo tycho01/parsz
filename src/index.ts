@@ -58,7 +58,7 @@ const parseItem = (el: Element, itemMap: ParseletItem, opts: IOpts): {} =>
     }, {});
 
 const parseList = (el: Element, sel: string, map: ParseletItem, opts: IOpts): any[] =>
-    getItemScope(el, sel).map((index: number, item: CheerioElement) => parseItem(
+    getItemScope(el, sel).map((i: number, item: CheerioElement) => parseItem(
       (el as Cheerio).find ? cheerio.load(item) : (el as CheerioSelector)(item),
     map, opts)).get() as Array<{}>;
 
