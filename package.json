@@ -32,6 +32,6 @@
     "type": "git",
     "url": "git://github.com/tycho01/parsz"
   },
-  "author": "Richard van der Dys <richard.vanderdys@gmail.com> (http://richardvanderdys.com/), Tycho Grouwstra <tychogrouwstra@gmail.com> (https://github.com/tycho01)",
+  "authors": ["Richard van der Dys <richard.vanderdys@gmail.com> (http://richardvanderdys.com/)", "Tycho Grouwstra <tychogrouwstra@gmail.com> (https://github.com/tycho01)"],
   "license": "MIT"
 }
