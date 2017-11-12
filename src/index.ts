@@ -11,9 +11,9 @@ const mapPairs = (fn: ([k, v]: [string, any]) => [string, any]) =>
     R.pipe(R.toPairs, R.map(fn), R.fromPairs);
 
 // http://2ality.com/2012/04/eval-variables.html
-const evalExpr = (expr: string, vars: { [k: string]: any }): any => Function
-  .apply(null, [...Object.keys(vars), `return ${expr}`])
-  .apply(null, Object.values(vars));
+const evalExpr = (expr: string, o: {}): any => Function
+  .apply(null, [...R.keys(o), `return ${expr}`])
+  .apply(null, R.values(o));
 
 function getMatch(selector: string, pattern: RegExp): string[] {
   const matched = selector.match(pattern);
@@ -24,8 +24,8 @@ function getMatch(selector: string, pattern: RegExp): string[] {
 }
 
 function parseKey(key: string): IKeyInfo {
-  const [, name, questionMark, scope, linkSelector] = getMatch(key, keyPattern);
-  return { isRemote: !!linkSelector, isOptional: !!questionMark, linkSelector, name, scope };
+  const [, name, optional, scope, linkSelector] = getMatch(key, keyPattern);
+  return { isRemote: !!linkSelector, isOptional: !!optional, linkSelector, name, scope };
 }
 
 function parseSelector(str: string): ISelectorInfo {
@@ -40,8 +40,8 @@ const getItemScope = (el: Element, sel: string): Cheerio =>
     (el as Cheerio).find ? (el as Cheerio).find(sel) :
         (el as CheerioSelector)(sel);
 
-function parseLocalData(el: Element, smartSelector: string, opts: IOpts): {} {
-  const { selector, attr, fn } = parseSelector(smartSelector);
+function parseLocalData(el: Element, sel: string, opts: IOpts): {} {
+  const { selector, attr, fn } = parseSelector(sel);
   const item = getItemScope(el, selector);
   const data = attr ? item.attr(attr) : item.text().trim();
   if (data && fn) {
