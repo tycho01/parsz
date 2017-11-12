@@ -5,9 +5,7 @@ import { IKeyInfo, IOptions, IOpts, IParselet, ISelectorInfo, ParseletItem, Pars
 const keyPattern = /^([\w-]+)(\?)?\(?([^)~]*)\)?~?\(?([^)]*)\)?$/;
 const selectorPattern = /^([.-\s\w[\]=>]+)?@?([\w-]+)?\s*\|?\s*(.*)?$/;
 const IDENTITY_SELECTOR = ".";
-
-const mapPairs = (fn: ([k, v]: [string, any]) => [string, any]) =>
-    R.pipe(R.toPairs, R.map(fn) as (r: Array<[string, any]>) => Array<[string, any]>, R.fromPairs);
+const VOID_NAME = "--";
 
 // http://2ality.com/2012/04/eval-variables.html
 const evalExpr = (expr: string, o: {}): any => Function
@@ -28,6 +26,7 @@ function parseKey(key: string): IKeyInfo {
   return {
     isOptional: !!optional,
     isRemote: !!linkSelector,
+    isVoid: name.trim() === VOID_NAME,
     linkSelector, name, selector,
   };
 }
@@ -60,31 +59,42 @@ function parseValue({ $, transforms, isOptional, parselet }: IOpts<string>): {} 
 
 // handle a parselet item: string or object
 const parseItem = (opts: IOpts<ParseletItem>): {} =>
-    R.ifElse(R.propIs(String, "parselet"), parseValue, parseObject)(opts);
+    R.ifElse<IOpts<any>, {}, {}>(R.propIs(String, "parselet"), parseValue, parseObject)(opts);
 
 // handle a parselet object
-const parseObject = (opts: IOpts<IParselet>) =>
-    mapPairs(([k, map]: [string, ParseletValue]) => {
-      const { name, selector: sel, isOptional } = parseKey(k);
-      const opt = <T>(parselet: T) => R.merge(opts, { parselet, isOptional: isOptional || opts.isOptional });
-      const data = R.is(Array, map) ?
-          parseList(sel, opt(map[0])) :
-          parseItem(opt(map));
-      return [name, data];
-    })(opts.parselet);
+const parseObject = (opts: IOpts<IParselet>): {} => R.pipe(
+  R.toPairs,
+  R.chain<"1", "list">()(([k, map]: [string, ParseletValue]) => {
+    const { name, selector: sel, isOptional, isVoid } = parseKey(k);
+    const opt: IOpts<ParseletValue> = R.merge(opts, { parselet: map, isOptional: isOptional || opts.isOptional });
+    if (isVoid && R.is(Object, map)) {
+      return R.pipe(
+        R.evolve({ $: ($: Scope) => getItemScope($, sel) }) as R.Morphism<IOpts<ParseletItem>, IOpts<IParselet>>,
+        parseObject, R.toPairs,
+      )(opt as IOpts<IParselet>);
+    }
+    const data = R.is(Array, map) ?
+        parseList(sel, opt) :
+        parseItem(opt as IOpts<ParseletItem>);
+    return [[name, data]] as Array<[string, any]>;
+  }) as (r: Array<[string, any]>) => Array<[string, any]>,
+  R.fromPairs,
+)(opts.parselet);
 
 // handle a parselet list, i.e. parse each selected Cheerio node
-function parseList(sel: string, opts: IOpts<ParseletItem>): any[] {
-  const { $ } = opts;
+function parseList(sel: string, opts: IOpts<ParseletValue>): any[] {
+  const opt = R.evolve({ parselet: R.prop(0) }, opts) as IOpts<ParseletItem>;
+  const { $ } = opt;
   return getItemScope($, sel).map((i: number, el: CheerioElement) => parseItem(
     R.assoc("$",
       ($ as Cheerio).find ? cheerio.load(el) : ($ as CheerioSelector)(el),
-    opts),
+    opt),
   )).get() as Array<{}>;
 }
 
 // handle a parselet object
-export const partsley = (html: string, parselet: IParselet, opts: Partial<IOptions<IParselet>> = {}): {} =>
+export const partsley = (html: string, parselet: IParselet, opts:
+    Partial<IOptions<IParselet>> = {}): { [k: string]: any } =>
     R.pipe(
       R.merge({ parselet, $: cheerio.load(html) }),
       parseObject,

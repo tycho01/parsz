@@ -10,6 +10,7 @@ export interface IKeyInfo {
   linkSelector: string;
   isRemote: boolean;
   isOptional: boolean;
+  isVoid: boolean;
 }
 
 export interface IOpts<T> extends IOptions<T> {
@@ -20,6 +21,7 @@ export interface IOptions<T> {
   $?: Scope;
   transforms?: {};
   isOptional?: boolean;
+  context?: string; // deprecated, used as domain context for deep url fetching
 }
 
 export interface ISelectorInfo {
