@@ -6,7 +6,7 @@ export interface IParselet {
 
 export interface IKeyInfo {
   name: string;
-  scope: string;
+  selector: string;
   linkSelector: string;
   isRemote: boolean;
   isOptional: boolean;
@@ -24,4 +24,4 @@ export interface ISelectorInfo {
   fn: string;
 }
 
-export type Element = Cheerio | CheerioSelector;
+export type Scope = Cheerio | CheerioSelector;
