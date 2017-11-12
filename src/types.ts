@@ -18,7 +18,6 @@ export interface IOpts<T> extends IOptions<T> {
 export interface IOptions<T> {
   parselet: T;
   $?: Scope;
-  context?: string;
   transforms?: {};
   isOptional?: boolean;
 }
