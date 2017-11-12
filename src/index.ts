@@ -59,8 +59,9 @@ function parseValue(el: Element, sel: string, opts: IOpts): {} {
 
 // handle a parselet item: string or object
 const parseItem = (el: Element, item: ParseletItem, opts: IOpts): {} =>
-    typeof item === "string" ? parseValue(el, item, opts) :
-    parseObject(el, item, opts);
+    typeof item === "string" ?
+        parseValue(el, item, opts) :
+        parseObject(el, item, opts);
 
 // handle a parselet object
 const parseObject = (el: Element, item: IParselet, opts: IOpts): {} =>
