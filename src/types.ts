@@ -15,6 +15,7 @@ export interface IKeyInfo {
 export interface IOpts {
   context?: string;
   transforms?: {};
+  isOptional?: boolean;
 }
 
 export interface ISelectorInfo {
