@@ -2,7 +2,7 @@
 import * as cheerio from "cheerio";
 import { Element, IKeyInfo, IOpts, IParselet, ISelectorInfo, ParseletItem, ParseletValue } from "./types";
 
-const keyPattern = /^([\w-]+)\(?([^)~]*)\)?~?\(?([^)]*)\)?$/;
+const keyPattern = /^([\w-]+)(\?)?\(?([^)~]*)\)?~?\(?([^)]*)\)?$/;
 const selectorPattern = /^([.-\s\w[\]=>]+)?@?([\w-]+)?\s*\|?\s*(.*)?$/;
 const IDENTITY_SELECTOR = ".";
 
@@ -20,8 +20,8 @@ function getMatch(selector: string, pattern: RegExp): string[] {
 }
 
 function parseKey(key: string): IKeyInfo {
-  const [, name, scope, linkSelector] = getMatch(key, keyPattern);
-  return { isRemote: !!linkSelector, linkSelector, name, scope };
+  const [, name, questionMark, scope, linkSelector] = getMatch(key, keyPattern);
+  return { isRemote: !!linkSelector, isOptional: !!questionMark, linkSelector, name, scope };
 }
 
 function parseSelector(str: string): ISelectorInfo {

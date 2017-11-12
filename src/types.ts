@@ -9,6 +9,7 @@ export interface IKeyInfo {
   scope: string;
   linkSelector: string;
   isRemote: boolean;
+  isOptional: boolean;
 }
 
 export interface IOpts {
