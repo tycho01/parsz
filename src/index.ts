@@ -46,7 +46,7 @@ function parseLocalData(el: Element, smartSelector: string, opts: IOpts): {} {
   const data = attr ? item.attr(attr) : item.text().trim();
   if (data && fn) {
     const { transforms } = opts;
-    return evalExpr(fn, transforms || {})(data);
+    return evalExpr(fn, transforms || R)(data);
   }
   return data;
 }
