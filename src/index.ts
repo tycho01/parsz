@@ -3,7 +3,7 @@ import * as R from "ramda";
 import { IKeyInfo, IOptions, IOpts, IParselet, ISelectorInfo, ParseletItem, ParseletValue, Scope } from "./types";
 
 const keyPattern = /^([\w-]+)(\?)?\(?([^)~]*)\)?~?\(?([^)]*)\)?$/;
-const selectorPattern = /^([.-\s\w[\]=>]+)?@?([\w-]+)?\s*\|?\s*(.*)?$/;
+const selectorPattern = /^([.-\s\w[\]=>#:()]+)?@?([\w-]+)?\s*\|?\s*(.*)?$/;
 const IDENTITY_SELECTOR = ".";
 const VOID_NAME = "--";
 
